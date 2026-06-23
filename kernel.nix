@@ -24,7 +24,7 @@ let
   # Executes fn after effect-requests for each of its named arguments.
   # Produces a singleton st from fn result. See fx.bind.fn and fx.rotate.
   # ---------------------------------------------------------------------------
-  ctx-s = f: wrap (fx.stream.fromList [ (fx.bind.fn { } f) ]);
+  ctx-s = f: wrap (fx.stream.more (fx.bind.fn { } f) (fx.stream.done null));
 
   # ---------------------------------------------------------------------------
   # ctx-d :: bindings -> comp-s -> comp-s
@@ -115,7 +115,7 @@ let
             fx.bind (rot comp) (
               val:
               let
-                inner = if val ? __stream then val.__stream else fx.stream.fromList [ val ];
+                inner = if val ? __stream then val.__stream else fx.stream.more (val) (fx.stream.done null);
               in
               fx.stream.concat (walk-rot inner) (go step.tail)
             )
@@ -243,7 +243,7 @@ let
       raw-stream
     else
       let
-        unwrap-st = s: if s ? __stream then s.__stream else fx.stream.fromList [ s ];
+        unwrap-st = s: if s ? __stream then s.__stream else fx.stream.more (s) (fx.stream.done null);
 
         sub-filter-map =
           name: mapper: wrap (fx.stream.map mapper (fx.stream.filter (x: x ? ${name}) raw-stream));
@@ -274,9 +274,9 @@ let
             else if builtins.isFunction v then
               (if lib.functionArgs v == { } then v self else self (ctx-s v))
             else if builtins.isList v then
-              wrap (fx.stream.concat raw-stream (fx.stream.fromList [ v ]))
+              wrap (fx.stream.concat raw-stream (fx.stream.more (v) (fx.stream.done null)))
             else
-              wrap (fx.stream.concat raw-stream (fx.stream.fromList [ v ]));
+              wrap (fx.stream.concat raw-stream (fx.stream.more (v) (fx.stream.done null)));
 
           map = f: wrap (fx.stream.map f raw-stream);
           filter = p: wrap (fx.stream.filter p raw-stream);
